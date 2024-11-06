@@ -18,9 +18,13 @@
 
 ## 演示站点
 
-前端：https://dev.ruom.top/
+前端：[https://bed.lianli.us.kg/](https://bed.lianli.us.kg/)
 
-后台：https://dev.ruom.top/admin/
+后台：[https://bed.lianli.us.kg/admin](https://bed.lianli.us.kg/admin/)
+
+用户名：helloworld
+
+密码：helloworld
 
 ## 安装教程
 
@@ -91,28 +95,3 @@ https://cdn.jsdelivr.net/npm/pixpro@latest/
 https://cdn.cbd.int/pixpro@latest/
 
 例如：https://cdn.cbd.int/pixpro@1.7.6/static/js/admin.js
-
-
-## 拓展功能
-
-本程序支持 Upgit 对接在Typora使用，对接方法如下
-
-### 下载upgit
-
-前往下载 [Upgit](https://alist.ruom.top/%E8%B5%84%E6%BA%90-%E5%88%86%E4%BA%AB/%E6%88%91%E7%9A%84%E9%A1%B9%E7%9B%AE/Upgit)
-
-### 如何配置
-
-修改目录下`config.toml`文件，内容如下
-
-```toml
-default_uploader = "PixPro"
-
-[uploaders.PixPro]
-request_url = "https://xxx.xxx.xxx/api.php"
-token = "这里内容替换为你的Token"
-```
-### 接入 Typora
-
-转到 Image 选自定义命令作为图像上传器，在命令文本框中输入 Upgit 程序位置，然后就可以使用了
-![接入到Typora](https://cdn.dusays.com/2022/05/459-2.jpg)
