@@ -22,7 +22,6 @@
   ],
   "vars": {
     "MAX_UPLOAD_MB": "10",
-    "PUBLIC_BASE_URL": "https://picture.291055.xyz",
-    "BACKGROUND_URL": "https://pic.291055.xyz/static/images/bg.webp"
+    "PUBLIC_BASE_URL": "https://picture.291055.xyz"
   }
 }
