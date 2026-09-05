@@ -7,7 +7,8 @@
 - 站点地址：`https://picture.291055.xyz`
 - 管理后台：`https://picture.291055.xyz/admin/`
 - 图片公开地址前缀：`https://picture.291055.xyz/i/`
-- 背景图片：`https://pic.291055.xyz/static/images/bg.webp`
+- 背景图片：项目内 `static/images/bg.webp`
+- 背景访问路径：`https://picture.291055.xyz/static/images/bg.webp`
 - 项目仓库：`git@github.com:zy111x/PixPro_Img.git`
 - GitHub 页面：`https://github.com/zy111x/PixPro_Img`
 
@@ -156,15 +157,20 @@ https://picture.291055.xyz/i/2026/09/05/xxxxxxxxxxxxxxxx.webp
 {
   "vars": {
     "MAX_UPLOAD_MB": "10",
-    "PUBLIC_BASE_URL": "https://picture.291055.xyz",
-    "BACKGROUND_URL": "https://pic.291055.xyz/static/images/bg.webp"
+    "PUBLIC_BASE_URL": "https://picture.291055.xyz"
   }
 }
 ```
 
 如果以后再次换域名，优先修改 `PUBLIC_BASE_URL` 和 `routes[].pattern`。
 
-如果以后更换背景，修改 `BACKGROUND_URL` 即可。
+如果以后更换背景，直接替换项目里的：
+
+```text
+static/images/bg.webp
+```
+
+不再依赖外部背景地址。
 
 ## API
 
@@ -195,7 +201,19 @@ GET https://picture.291055.xyz/api/images?limit=1000
 Authorization: Bearer <ADMIN_TOKEN>
 ```
 
-### 删除
+### 删除（推荐）
+
+```http
+POST https://picture.291055.xyz/api/delete
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{"keys":["images/2026/09/05/xxx.webp"]}
+```
+
+支持一次删除多张图片。
+
+旧的兼容接口仍可使用：
 
 ```http
 DELETE https://picture.291055.xyz/api/images
