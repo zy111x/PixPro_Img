@@ -210,13 +210,22 @@ async function listImages(request, env) {
   });
 }
 
-async function removeImage(request, env) {
+async function deleteImages(request, env) {
   if (!isAuthorized(request, env)) return unauthorized();
   const body = await request.json().catch(() => ({}));
-  const key = String(body.key || '');
-  if (!key.startsWith('images/')) return json({ ok: false, error: 'Invalid key' }, 400);
-  await env.IMAGES.delete(key);
-  return json({ ok: true });
+  const keys = Array.isArray(body.keys)
+    ? body.keys.map(String)
+    : body.key
+      ? [String(body.key)]
+      : [];
+
+  const valid = [...new Set(keys.filter((key) => key.startsWith('images/')))];
+  if (!valid.length || valid.length !== keys.length) {
+    return json({ ok: false, error: 'Invalid image key' }, 400);
+  }
+
+  await env.IMAGES.delete(valid);
+  return json({ ok: true, deleted: valid.length, keys: valid });
 }
 
 async function serveImage(request, env, pathname) {
@@ -233,11 +242,6 @@ async function serveImage(request, env, pathname) {
 
 async function serveUpstreamStaticAlias(request, env) {
   const url = new URL(request.url);
-
-  if (url.pathname === '/static/images/bg.webp' && env.BACKGROUND_URL) {
-    return Response.redirect(env.BACKGROUND_URL, 302);
-  }
-
   url.pathname = url.pathname.replace(/^\/static/, '') || '/';
   return env.ASSETS.fetch(new Request(url.toString(), request));
 }
@@ -252,7 +256,8 @@ export default {
       if (path === '/api/upload' && request.method === 'POST') return upload(request, env);
       if (path === '/api/upload-url' && request.method === 'POST') return uploadFromUrl(request, env);
       if (path === '/api/images' && request.method === 'GET') return listImages(request, env);
-      if (path === '/api/images' && request.method === 'DELETE') return removeImage(request, env);
+      if (path === '/api/images' && request.method === 'DELETE') return deleteImages(request, env);
+      if (path === '/api/delete' && request.method === 'POST') return deleteImages(request, env);
       if (path.startsWith('/i/') && request.method === 'GET') return serveImage(request, env, path);
       if (path.startsWith('/static/') && ['GET', 'HEAD'].includes(request.method)) return serveUpstreamStaticAlias(request, env);
 
