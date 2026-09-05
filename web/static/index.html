@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>若梦图床</title>
+    <meta name="description" content="PixPro Cloudflare R2 无服务器图床">
+    <link rel="canonical" href="https://picture.291055.xyz/">
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/favicon.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/css/styles.css">
+    <link rel="stylesheet" href="/css/site-overrides.css?v=20260905-color">
+</head>
+<body>
+    <header class="glass glass-in">
+        <a href="https://picture.291055.xyz" title="主页" class="header-link">
+            <svg class="icon" aria-hidden="true"><use xlink:href="#icon-home"></use></svg>
+        </a>
+        <a href="https://github.com/zy111x/PixPro_Img" target="_blank" title="PixPro_Img 项目" class="header-link">
+            <svg class="icon" aria-hidden="true"><use xlink:href="#icon-Blog"></use></svg>
+        </a>
+        <a href="https://github.com/zy111x/PixPro_Img" target="_blank" title="Github" class="header-link">
+            <svg class="icon" aria-hidden="true"><use xlink:href="#icon-Github"></use></svg>
+        </a>
+        <a href="https://picture.291055.xyz/admin/" title="后台" class="header-link">
+            <svg class="icon" aria-hidden="true"><use xlink:href="#icon-Setting"></use></svg>
+        </a>
+    </header>
+    <main>
+        <div class="upload-container glass glass-in">
+            <form id="uploadForm" enctype="multipart/form-data" onsubmit="return false;">
+                <div class="upload-section">
+                    <button type="button" id="deleteImageButton" class="deleteImageButton glass-btn">
+                        <svg class="icon" aria-hidden="true"><use xlink:href="#icon-xmark"></use></svg>
+                    </button>
+                    <div id="imageUploadBox" class="imageUploadBox glass-subtle" onclick="document.getElementById('imageInput').click();">
+                        <svg class="icon upload-icon" aria-hidden="true"><use xlink:href="#icon-up"></use></svg>
+                        <input type="file" id="imageInput" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/avif" multiple>
+                        <div id="imagePreviewContainer" class="imagePreviewContainer">
+                            <button type="button" id="prevButton" class="nav-button prev-button glass-btn">
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-Left-arrow"></use></svg>
+                            </button>
+                            <img id="imagePreview" class="imagePreview" src="" alt="">
+                            <button type="button" id="nextButton" class="nav-button next-button glass-btn">
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-Right-arrow"></use></svg>
+                            </button>
+                            <div id="imageCounter" class="image-counter glass-counter"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="thumbnailStrip" class="thumbnail-strip glass-panel">
+                    <div id="thumbnailScrollContainer" class="thumbnail-scroll-container"></div>
+                </div>
+
+                <div class="url-input-section">
+                    <input type="text" id="pasteOrUrlInput" class="pasteOrUrlInput glass-input" placeholder="输入图片网络链接后按 Enter 上传，或使用 Ctrl+V 粘贴图片" title="部分网站设置防盗链时可能无法抓取">
+                </div>
+
+                <div class="quality-section glass-panel">
+                    <label for="qualityInput">图片清晰度 60-100<output id="qualityOutput" class="qualityOutput">60</output></label>
+                    <input type="range" id="qualityInput" min="60" max="100" value="60" step="1">
+                </div>
+
+                <div class="copy-section">
+                    <div class="copy-tab-buttons">
+                        <div class="copy-icons-column">
+                            <button type="button" class="copy-tab-btn glass-panel" data-type="url" title="复制图片链接；Ctrl+点击批量复制" disabled>
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-imageUrl"></use></svg>
+                            </button>
+                            <button type="button" class="copy-tab-btn glass-panel" data-type="markdown" title="复制 Markdown；Ctrl+点击批量复制" disabled>
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-markdownUrl"></use></svg>
+                            </button>
+                            <button type="button" class="copy-tab-btn glass-panel" data-type="html" title="复制 HTML；Ctrl+点击批量复制" disabled>
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-htmlUrl"></use></svg>
+                            </button>
+                        </div>
+                        <div class="copy-links-column">
+                            <div class="copy-link-display glass-panel disabled" data-type="url"><span class="copy-link-text" id="urlLinkText"></span></div>
+                            <div class="copy-link-display glass-panel disabled" data-type="markdown"><span class="copy-link-text" id="markdownLinkText"></span></div>
+                            <div class="copy-link-display glass-panel disabled" data-type="html"><span class="copy-link-text" id="htmlLinkText"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="progressContainer" class="progressContainer"><div id="progressBar" class="progressBar"></div></div>
+            </form>
+        </div>
+
+        <div id="imageInfo" class="imageInfo glass glass-in">
+            <div class="image-info-block">
+                <div class="info-header">
+                    <svg class="icon info-icon" aria-hidden="true"><use xlink:href="#icon-imageUrl"></use></svg>
+                    <h3>原始图片</h3>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item glass-panel"><span class="info-label">尺寸</span><span class="info-value" id="originalWidth">-</span></div>
+                    <div class="info-item glass-panel"><span class="info-label">大小</span><span class="info-value" id="originalSize">-</span></div>
+                </div>
+            </div>
+            <div class="image-info-block">
+                <div class="info-header">
+                    <svg class="icon info-icon" aria-hidden="true"><use xlink:href="#icon-up"></use></svg>
+                    <h3>压缩后</h3>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item glass-panel"><span class="info-label">尺寸</span><span class="info-value" id="compressedWidth">-</span></div>
+                    <div class="info-item glass-panel"><span class="info-label">大小</span><span class="info-value" id="compressedSize">-</span></div>
+                </div>
+            </div>
+            <div class="compression-stats">
+                <div class="stat-badge glass-panel"><span class="stat-label">压缩率</span><span class="stat-value" id="compressionRatio">-</span></div>
+                <div class="stat-badge glass-panel"><span class="stat-label">节省空间</span><span class="stat-value" id="savedSpace">-</span></div>
+            </div>
+        </div>
+
+        <div class="keyboard-hints glass glass-in">
+            <div class="hint-item"><div class="kbd-group"><kbd>←</kbd><kbd>→</kbd></div><span>切换图片</span></div>
+            <div class="hint-item"><div class="kbd-group"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>V</kbd></div><span>粘贴上传</span></div>
+            <div class="hint-item"><div class="kbd-group"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>点击</kbd></div><span>批量复制</span></div>
+            <div class="hint-item"><div class="kbd-group"><kbd>滚轮</kbd></div><span>切换图片</span></div>
+            <div class="hint-item"><div class="kbd-group"><kbd>Esc</kbd></div><span>清除图片</span></div>
+        </div>
+    </main>
+    <footer>
+        <span>富强</span><span>民主</span><span>文明</span><span>和谐</span><span>自由</span><span>平等</span><span>公正</span><span>法治</span><span>爱国</span><span>敬业</span><span>诚信</span><span>友善</span>
+        <div class="icp">
+            <span>项目：</span><a href="https://github.com/zy111x/PixPro_Img" target="_blank">PixPro_Img</a>
+            <span>· Cloudflare Workers + R2</span>
+            <a href="https://picture.291055.xyz">picture.291055.xyz</a>
+            <button class="logo-btn">站点声明</button>
+            <em class="logotitle glass glass-in">请勿上传违法、侵权或敏感内容。图片直链为公开访问，请妥善管理 ADMIN_TOKEN。</em>
+        </div>
+    </footer>
+    <script src="//at.alicdn.com/t/c/font_4623353_hb4c04qfi4u.js"></script>
+    <script type="module" src="/js/r2-script.js"></script>
+</body>
+</html>
