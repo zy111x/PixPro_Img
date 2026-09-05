@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台</title>
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link id="loginCss" rel="stylesheet" type="text/css" href="/css/login.css">
+    <link id="adminCss" rel="stylesheet" type="text/css" href="/css/admin.css" disabled>
+    <link rel="stylesheet" href="/css/fancybox.min.css">
+    <script src="/js/fancybox.umd.min.js" defer></script>
+</head>
+<body>
+    <div id="loginView" class="login-container">
+        <div class="form-container active">
+            <h2>登录</h2>
+            <form id="tokenForm">
+                <div class="form-group">
+                    <label for="adminToken">管理口令：</label>
+                    <input type="password" id="adminToken" autocomplete="current-password" required>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit">登录</button>
+                </div>
+            </form>
+            <div class="reset-password">
+                <a href="/">返回首页</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminView" style="display:none;width:100%;">
+        <div id="gallery" class="gallery"></div>
+        <div class="rightside">
+            <a href="/" class="floating-link" title="返回主页"><img src="/images/svg/home.svg" alt="主页"></a>
+            <a href="#" class="logout-link" id="logout" title="退出登录"><img src="/images/svg/logout.svg" alt="退出"></a>
+            <a class="top-link" id="scroll-to-top" title="回到顶部"><img src="/images/svg/top.svg" alt="顶部"></a>
+            <span id="current-total-pages">1/1</span>
+        </div>
+        <div id="pagination" class="pagination" style="left:50%;"></div>
+        <div id="loading-indicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <div class="loading-text">加载中...</div>
+        </div>
+    </div>
+
+    <script src="/js/r2-admin.js" defer></script>
+</body>
+</html>
