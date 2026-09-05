@@ -228,6 +228,12 @@ async function serveImage(request, env, pathname) {
   return new Response(object.body, { headers });
 }
 
+async function serveUpstreamStaticAlias(request, env) {
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/^\/static/, '') || '/';
+  return env.ASSETS.fetch(new Request(url.toString(), request));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -240,6 +246,7 @@ export default {
       if (path === '/api/images' && request.method === 'GET') return listImages(request, env);
       if (path === '/api/images' && request.method === 'DELETE') return removeImage(request, env);
       if (path.startsWith('/i/') && request.method === 'GET') return serveImage(request, env, path);
+      if (path.startsWith('/static/') && ['GET', 'HEAD'].includes(request.method)) return serveUpstreamStaticAlias(request, env);
 
       return env.ASSETS.fetch(request);
     } catch (error) {
