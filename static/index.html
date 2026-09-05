@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>若梦图床</title>
+    <meta name="description" content="PixPro Cloudflare R2 无服务器图床">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="/css/styles.css">
+</head>
+<body>
+    <header class="blur">
+        <a href="/" title="主页" class="header-link">
+            <img src="/images/svg/home.svg" alt="主页" class="header-icon" />
+        </a>
+        <a href="https://github.com/zy111x" target="_blank" title="Github主页" class="header-link">
+            <img src="/images/svg/Blog.svg" alt="Github主页" class="header-icon" />
+        </a>
+        <a href="https://github.com/zy111x/PixPro_Img" target="_blank" title="Github" class="header-link">
+            <img src="/images/svg/Github.svg" alt="Github" class="header-icon" />
+        </a>
+        <a href="/admin/" title="后台" class="header-link">
+            <img src="/images/svg/Setting.svg" alt="后台" class="header-icon" />
+        </a>
+    </header>
+    <main>
+        <div class="uploadForm blur">
+            <form id="uploadForm" enctype="multipart/form-data" onsubmit="return false;">
+                <button id="deleteImageButton" type="button" class="deleteImageButton">
+                    <img src="/images/svg/xmark.svg" alt="x">
+                </button>
+                <div id="imageUploadBox" class="imageUploadBox blur" onclick="document.getElementById('imageInput').click();">
+                    <input type="file" id="imageInput" name="image[]" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif,image/avif" multiple>
+                    <img id="imagePreview" class="imagePreview" src="/images/svg/up.svg" alt="预览图片">
+                </div>
+                <div id="pasteOrUrlInputBox">
+                    <input type="text" id="pasteOrUrlInput" class="pasteOrUrlInput blur" placeholder="此处可粘贴图像URL或使用Ctrl+V粘贴图片">
+                </div>
+                <div id="parameters" class="parameters">
+                    <label for="qualityInput">图片清晰度 60-100<output id="qualityOutput" class="qualityOutput">60</output></label>
+                    <input type="range" id="qualityInput" name="quality" min="60" max="100" value="60" step="5">
+                </div>
+                <div id="progressContainer" class="progressContainer">
+                    <div id="progressBar" class="progressBar"></div>
+                </div>
+            </form>
+        </div>
+        <div class="urlOutput blur" id="urlOutput">
+            <div class="tab-buttons blur">
+                <button class="tab-button active" data-target="tab1" title="图片链接">
+                    <img src="/images/svg/imageUrl.svg" alt="图片链接"/>
+                </button>
+                <button class="tab-button" data-target="tab2" title="Markdown代码">
+                    <img src="/images/svg/markdownUrl.svg" alt="Markdown代码"/>
+                </button>
+                <button class="tab-button" data-target="tab3" title="Markdown链接">
+                    <img src="/images/svg/markdownLinkUrl.svg" alt="Markdown链接"/>
+                </button>
+                <button class="tab-button" data-target="tab4" title="HTML代码">
+                    <img src="/images/svg/htmlUrl.svg" alt="HTML代码"/>
+                </button>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane active" id="tab1"><div class="input-container" id="imageUrlContainer"></div></div>
+                <div class="tab-pane" id="tab2"><div class="input-container" id="markdownUrlContainer"></div></div>
+                <div class="tab-pane" id="tab3"><div class="input-container" id="markdownLinkUrlContainer"></div></div>
+                <div class="tab-pane" id="tab4"><div class="input-container" id="htmlUrlContainer"></div></div>
+            </div>
+        </div>
+        <div id="imageInfo" class="imageInfo blur">
+            <div class="image-info-block">
+                <h2>压缩前</h2>
+                <p>宽度：<span id="originalWidth"></span> px</p>
+                <p>高度：<span id="originalHeight"></span> px</p>
+                <p>大小：<span id="originalSize"></span> KB</p>
+            </div>
+            <div class="image-info-block">
+                <h2>压缩后</h2>
+                <p>宽度：<span id="compressedWidth"></span> px</p>
+                <p>高度：<span id="compressedHeight"></span> px</p>
+                <p>大小：<span id="compressedSize"></span> KB</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <span>富强</span><span>民主</span><span>文明</span><span>和谐</span><span>自由</span><span>平等</span>
+        <span>公正</span><span>法治</span><span>爱国</span><span>敬业</span><span>诚信</span><span>友善</span>
+        <div class="icp">
+            <span>PixPro · Cloudflare Workers + R2</span>
+            <a href="https://github.com/zy111x/PixPro_Img" target="_blank">Github</a>
+            <button class="logo-btn">站点声明</button>
+            <em class="logotitle blur">请勿上传违法、侵权或敏感内容。图片由站点使用者自行管理，公开直链可被任何获得链接的人访问。</em>
+        </div>
+    </footer>
+    <script type="text/javascript" src="/js/r2-script.js" defer></script>
+    <script type="text/javascript" src="/js/cursor.js" defer data-lazy="true"></script>
+</body>
+</html>
