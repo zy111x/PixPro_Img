@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PixPro R2</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}
+    body{margin:0;background:#0b1020;color:#eef2ff}.wrap{max-width:1100px;margin:0 auto;padding:28px}
+    .card{background:#151c33;border:1px solid #2a365d;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+    h1{margin:0 0 8px;font-size:28px}p{color:#b7c2e2}input,button{font:inherit}
+    input[type=password]{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid #3a4a7a;background:#0f1530;color:#fff}
+    button{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;background:#5b7cff;color:#fff}button.secondary{background:#27345b}button.danger{background:#8f3045}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.drop{border:2px dashed #455a93;border-radius:16px;padding:38px;text-align:center;cursor:pointer}.drop.drag{border-color:#8ca4ff;background:#111a38}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}.item{background:#0e1530;border-radius:14px;overflow:hidden;border:1px solid #27345a}.item img{width:100%;height:160px;object-fit:cover;background:#080d1e}.meta{padding:10px;font-size:12px;color:#b9c3df}.actions{display:flex;gap:6px;padding:0 10px 10px}.actions button{padding:7px 9px;font-size:12px}.status{min-height:20px;color:#9fb1e8}.muted{font-size:12px;color:#8fa0c7}.hidden{display:none}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.badge{padding:5px 9px;border-radius:999px;background:#24315a;color:#bcd0ff;font-size:12px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card top">
+      <div><h1>PixPro R2</h1><p>Cloudflare Workers + R2，无 PHP、无 MySQL、无 VPS。</p></div><span class="badge">Serverless</span>
+    </section>
+
+    <section class="card">
+      <h2>管理员口令</h2>
+      <p class="muted">首次部署后执行 <code>npx wrangler secret put ADMIN_TOKEN</code>。口令只保存在当前浏览器。</p>
+      <div class="row"><input id="token" type="password" placeholder="ADMIN_TOKEN" /><button id="saveToken">保存口令</button><button id="logout" class="secondary">清除</button></div>
+    </section>
+
+    <section class="card">
+      <h2>上传图片</h2>
+      <label class="drop" id="drop">点击选择，或拖拽 / 粘贴图片到这里<input id="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/avif" multiple class="hidden" /></label>
+      <div class="row" style="margin-top:12px"><button id="upload">上传所选</button><span id="selection" class="muted">未选择文件</span></div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2>图库</h2><button id="refresh" class="secondary">刷新</button></div>
+      <div id="grid" class="grid"></div>
+      <div class="row" style="margin-top:14px"><button id="more" class="secondary hidden">加载更多</button></div>
+    </section>
+  </main>
+<script>
+const $ = (s) => document.querySelector(s);
+const state = { files: [], cursor: null, selected: [] };
+const tokenEl = $('#token');
+tokenEl.value = localStorage.getItem('pixpro-admin-token') || '';
+function token(){ return tokenEl.value.trim(); }
+function auth(){ return { Authorization: `Bearer ${token()}` }; }
+function msg(text){ $('#status').textContent = text; }
+function fmt(n){ if(n<1024)return n+' B'; if(n<1024**2)return (n/1024).toFixed(1)+' KB'; return (n/1024**2).toFixed(1)+' MB'; }
+function esc(s=''){ return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+$('#saveToken').onclick=()=>{ localStorage.setItem('pixpro-admin-token', token()); msg('口令已保存在当前浏览器。'); load(true); };
+$('#logout').onclick=()=>{ localStorage.removeItem('pixpro-admin-token'); tokenEl.value=''; state.files=[]; render(); msg('口令已清除。'); };
+const input = $('#file'), drop = $('#drop');
+function selectFiles(files){ state.selected = [...files].filter(f=>f.type.startsWith('image/')); $('#selection').textContent = state.selected.length ? `${state.selected.length} 个文件，共 ${fmt(state.selected.reduce((a,f)=>a+f.size,0))}` : '未选择文件'; }
+input.onchange=()=>selectFiles(input.files);
+drop.ondragover=(e)=>{e.preventDefault();drop.classList.add('drag')}; drop.ondragleave=()=>drop.classList.remove('drag'); drop.ondrop=(e)=>{e.preventDefault();drop.classList.remove('drag');selectFiles(e.dataTransfer.files)};
+document.addEventListener('paste',(e)=>{ const files=[...e.clipboardData.files].filter(f=>f.type.startsWith('image/')); if(files.length) selectFiles(files); });
+$('#upload').onclick=async()=>{
+  if(!token()) return msg('请先填写 ADMIN_TOKEN。');
+  if(!state.selected.length) return msg('请先选择图片。');
+  const form=new FormData(); state.selected.forEach(f=>form.append('files',f,f.name));
+  msg('正在上传...');
+  const res=await fetch('/api/upload',{method:'POST',headers:auth(),body:form}); const data=await res.json().catch(()=>({}));
+  if(!res.ok) return msg(data.error||'上传失败');
+  msg(`上传成功：${data.files.length} 张`); state.selected=[]; input.value=''; selectFiles([]); await load(true);
+};
+async function load(reset=false){
+  if(!token()) return;
+  const u=new URL('/api/images',location.origin); if(!reset && state.cursor)u.searchParams.set('cursor',state.cursor);
+  const res=await fetch(u,{headers:auth()}); const data=await res.json().catch(()=>({}));
+  if(!res.ok){ msg(data.error||'读取图库失败'); return; }
+  state.files = reset ? data.files : state.files.concat(data.files); state.cursor=data.cursor; render();
+}
+function render(){
+  $('#grid').innerHTML=state.files.map(f=>`<article class="item"><img loading="lazy" src="${f.url}" alt=""><div class="meta"><div title="${esc(f.originalName||f.key)}">${esc((f.originalName||f.key).slice(0,38))}</div><div>${fmt(f.size)}</div></div><div class="actions"><button data-copy="${f.url}">直链</button><button data-md="${f.url}">Markdown</button><button class="danger" data-del="${esc(f.key)}">删除</button></div></article>`).join('');
+  $('#more').classList.toggle('hidden',!state.cursor);
+}
+document.addEventListener('click',async(e)=>{
+  if(e.target.dataset.copy){ await navigator.clipboard.writeText(e.target.dataset.copy); msg('已复制图片直链。'); }
+  if(e.target.dataset.md){ await navigator.clipboard.writeText(`![](${e.target.dataset.md})`); msg('已复制 Markdown。'); }
+  if(e.target.dataset.del){ if(!confirm('确认删除这张图片？'))return; const res=await fetch('/api/images',{method:'DELETE',headers:{...auth(),'content-type':'application/json'},body:JSON.stringify({key:e.target.dataset.del})}); const data=await res.json().catch(()=>({})); if(!res.ok)return msg(data.error||'删除失败'); msg('已删除。'); await load(true); }
+});
+$('#refresh').onclick=()=>load(true); $('#more').onclick=()=>load(false); if(token()) load(true);
+</script>
+</body>
+</html>
