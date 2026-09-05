@@ -10,9 +10,9 @@
     }
   ],
   "assets": {
-    "directory": "./static",
+    "directory": "./web",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/i/*", "/static/*", "/health"]
+    "run_worker_first": ["/api/*", "/i/*", "/health"]
   },
   "r2_buckets": [
     {
