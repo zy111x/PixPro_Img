@@ -3,6 +3,12 @@
   "name": "pixpro-r2",
   "main": "src/index.js",
   "compatibility_date": "2026-09-05",
+  "routes": [
+    {
+      "pattern": "picture.291055.xyz",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./static",
     "binding": "ASSETS",
@@ -15,6 +21,8 @@
     }
   ],
   "vars": {
-    "MAX_UPLOAD_MB": "10"
+    "MAX_UPLOAD_MB": "10",
+    "PUBLIC_BASE_URL": "https://picture.291055.xyz",
+    "BACKGROUND_URL": "https://pic.291055.xyz/static/images/bg.webp"
   }
 }
