@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pixpro-r2",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/i/*", "/health"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "pixpro-images"
+    }
+  ],
+  "vars": {
+    "MAX_UPLOAD_MB": "10"
+  }
+}
