@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台</title>
+    <link rel="canonical" href="https://picture.291055.xyz/admin/">
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/favicon.svg">
+    <link id="loginCss" rel="stylesheet" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/css/login.css">
+    <link id="adminCss" rel="stylesheet" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/css/admin.css" disabled>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/css/fancybox.min.css">
+    <link rel="stylesheet" href="/css/site-overrides.css?v=20260905-color">
+</head>
+<body>
+    <div id="loginView" class="auth-card auth-card--narrow glass">
+        <div class="form-container active" id="login-form">
+            <h2>登录</h2>
+            <form id="tokenForm">
+                <div class="form-group">
+                    <label for="adminToken">管理口令：</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" class="glass-input" id="adminToken" autocomplete="current-password" required placeholder="ADMIN_TOKEN">
+                        <span class="toggle-password" id="togglePassword">
+                            <svg class="icon" aria-hidden="true"><use xlink:href="#icon-eye"></use></svg>
+                        </span>
+                    </div>
+                </div>
+                <button type="submit" class="glass-btn">登录</button>
+            </form>
+            <div class="toggle-form"><a href="https://picture.291055.xyz">返回首页</a></div>
+        </div>
+    </div>
+
+    <div id="adminView" style="display:none;width:100%;">
+        <div id="gallery" class="gallery glass"></div>
+
+        <div class="rightside">
+            <a href="https://picture.291055.xyz" class="floating-link glass-btn" title="返回主页">
+                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-home"></use></svg>
+            </a>
+            <a href="#" class="select-link glass-btn" id="selectMode" title="多选模式">
+                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-select"></use></svg>
+            </a>
+            <a href="#" class="logout-link glass-btn" id="logout" title="退出登录">
+                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-logout"></use></svg>
+            </a>
+            <a class="top-link glass-btn" id="scroll-to-top" title="回到顶部">
+                <svg class="icon" aria-hidden="true"><use xlink:href="#icon-top"></use></svg>
+            </a>
+        </div>
+
+        <nav id="pagination" class="pagination-bar glass-panel" aria-label="分页"></nav>
+
+        <div id="selectionToolbar" class="glass-panel" style="display:none;position:fixed;left:50%;bottom:58px;transform:translateX(-50%);z-index:40;padding:9px 12px;border-radius:10px;gap:10px;align-items:center;">
+            <span id="selectedCount">已选择 0 张</span>
+            <button type="button" id="copySelected" class="glass-btn" style="padding:7px 12px;border-radius:7px;color:#fff;background:transparent;">复制链接</button>
+            <button type="button" id="deleteSelected" class="glass-btn" style="padding:7px 12px;border-radius:7px;color:#fff;background:rgba(166,19,19,.45);">删除</button>
+            <button type="button" id="cancelSelect" class="glass-btn" style="padding:7px 12px;border-radius:7px;color:#fff;background:transparent;">取消</button>
+        </div>
+
+        <div id="loading-indicator" class="loading-indicator glass-panel" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;padding:24px;border-radius:12px;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="//at.alicdn.com/t/c/font_4623353_hb4c04qfi4u.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/JLinMr/PixPro@aa8901c76ac86576d01f3c43937cb72e41082541/static/js/fancybox.umd.min.js"></script>
+    <script type="module" src="/js/r2-admin.js"></script>
+    <script type="module" src="/js/r2-admin-delete-fix.js"></script>
+</body>
+</html>

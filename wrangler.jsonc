@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pixpro-r2",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-05",
+  "routes": [
+    {
+      "pattern": "picture.291055.xyz",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/i/*", "/health"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "pixpro-images"
+    }
+  ],
+  "vars": {
+    "MAX_UPLOAD_MB": "10",
+    "PUBLIC_BASE_URL": "https://picture.291055.xyz"
+  }
+}
