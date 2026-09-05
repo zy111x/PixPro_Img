@@ -4,7 +4,7 @@ body {
 }
 
 body {
-  background-image: url('/images/bg.webp?v=20260905-color') !important;
+  background-image: url('/static/images/bg.webp?v=20260905-pathfix') !important;
   background-position: center center !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
