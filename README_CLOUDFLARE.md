@@ -29,6 +29,8 @@
 - 鉴权：`ADMIN_TOKEN` Worker Secret
 - 数据库：无
 
+旧的第一版 `public/index.html` 已移除，当前部署只使用 `static/` 目录中的 PixPro UI。
+
 ## 已保留 / 适配的功能
 
 - PixPro 毛玻璃前台 UI
