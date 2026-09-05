@@ -39,14 +39,14 @@ function extFromType(type = '') {
   return map[type] || 'bin';
 }
 
-function makeKey(file) {
+function makeKey(fileLike = {}) {
   const now = new Date();
   const yyyy = now.getUTCFullYear();
   const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(now.getUTCDate()).padStart(2, '0');
   const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
-  const original = safeName(file.name || `image.${extFromType(file.type)}`);
-  const ext = original.includes('.') ? original.split('.').pop() : extFromType(file.type);
+  const original = safeName(fileLike.name || `image.${extFromType(fileLike.type)}`);
+  const ext = original.includes('.') ? original.split('.').pop() : extFromType(fileLike.type);
   return `images/${yyyy}/${mm}/${dd}/${id}.${safeName(ext).toLowerCase()}`;
 }
 
@@ -55,15 +55,47 @@ function imageUrl(request, key) {
   return `${url.origin}/i/${key.replace(/^images\//, '')}`;
 }
 
+function allowedImageTypes() {
+  return new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/avif']);
+}
+
+function maxUploadBytes(env) {
+  return Math.max(1, Number(env.MAX_UPLOAD_MB || 10)) * 1024 * 1024;
+}
+
+async function storeImage(request, env, { body, name, size, type }) {
+  const key = makeKey({ name, type });
+  await env.IMAGES.put(key, body, {
+    httpMetadata: {
+      contentType: type,
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    customMetadata: {
+      originalName: name || '',
+      uploadedAt: new Date().toISOString(),
+      size: String(size || 0),
+    },
+  });
+
+  return {
+    key,
+    name: name || key.split('/').pop(),
+    size: Number(size || 0),
+    type,
+    url: imageUrl(request, key),
+  };
+}
+
 async function upload(request, env) {
   if (!isAuthorized(request, env)) return unauthorized();
 
   const form = await request.formData();
-  const files = form.getAll('files').filter((f) => f && typeof f.arrayBuffer === 'function');
+  const files = [...form.getAll('files'), ...form.getAll('image')]
+    .filter((file) => file && typeof file.arrayBuffer === 'function');
   if (!files.length) return json({ ok: false, error: 'No image files provided' }, 400);
 
-  const maxBytes = Math.max(1, Number(env.MAX_UPLOAD_MB || 10)) * 1024 * 1024;
-  const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/avif']);
+  const maxBytes = maxUploadBytes(env);
+  const allowed = allowedImageTypes();
   const uploaded = [];
 
   for (const file of files) {
@@ -74,34 +106,89 @@ async function upload(request, env) {
       return json({ ok: false, error: `${file.name} exceeds ${env.MAX_UPLOAD_MB || 10} MB` }, 413);
     }
 
-    const key = makeKey(file);
-    await env.IMAGES.put(key, file.stream(), {
-      httpMetadata: { contentType: file.type, cacheControl: 'public, max-age=31536000, immutable' },
-      customMetadata: {
-        originalName: file.name || '',
-        uploadedAt: new Date().toISOString(),
-        size: String(file.size),
-      },
-    });
-
-    uploaded.push({
-      key,
+    uploaded.push(await storeImage(request, env, {
+      body: file.stream(),
       name: file.name,
       size: file.size,
       type: file.type,
-      url: imageUrl(request, key),
-    });
+    }));
   }
 
   return json({ ok: true, files: uploaded });
 }
 
+function isPrivateHostname(hostname) {
+  const host = hostname.toLowerCase();
+  if (host === 'localhost' || host === '::1' || host.endsWith('.local')) return true;
+  if (/^127\./.test(host) || /^10\./.test(host) || /^169\.254\./.test(host) || /^192\.168\./.test(host)) return true;
+  const match = host.match(/^172\.(\d{1,3})\./);
+  if (match) {
+    const second = Number(match[1]);
+    if (second >= 16 && second <= 31) return true;
+  }
+  return false;
+}
+
+async function uploadFromUrl(request, env) {
+  if (!isAuthorized(request, env)) return unauthorized();
+  const body = await request.json().catch(() => ({}));
+  let remote;
+  try {
+    remote = new URL(String(body.url || ''));
+  } catch (_) {
+    return json({ ok: false, error: 'Invalid image URL' }, 400);
+  }
+
+  if (!['http:', 'https:'].includes(remote.protocol) || isPrivateHostname(remote.hostname)) {
+    return json({ ok: false, error: 'Unsupported image URL' }, 400);
+  }
+
+  const response = await fetch(remote.toString(), {
+    headers: { 'user-agent': 'PixPro-R2/1.0' },
+    redirect: 'follow',
+  });
+  if (!response.ok) return json({ ok: false, error: `Remote server returned ${response.status}` }, 400);
+
+  const type = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!allowedImageTypes().has(type)) {
+    return json({ ok: false, error: `Remote resource is not a supported image (${type || 'unknown'})` }, 415);
+  }
+
+  const maxBytes = maxUploadBytes(env);
+  const declaredSize = Number(response.headers.get('content-length') || 0);
+  if (declaredSize && declaredSize > maxBytes) {
+    return json({ ok: false, error: `Remote image exceeds ${env.MAX_UPLOAD_MB || 10} MB` }, 413);
+  }
+
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > maxBytes) {
+    return json({ ok: false, error: `Remote image exceeds ${env.MAX_UPLOAD_MB || 10} MB` }, 413);
+  }
+
+  let remoteName = decodeURIComponent(remote.pathname.split('/').pop() || 'image');
+  if (!remoteName.includes('.')) remoteName = `${remoteName}.${extFromType(type)}`;
+
+  const uploaded = await storeImage(request, env, {
+    body: buffer,
+    name: remoteName,
+    size: buffer.byteLength,
+    type,
+  });
+
+  return json({ ok: true, files: [uploaded] });
+}
+
 async function listImages(request, env) {
   if (!isAuthorized(request, env)) return unauthorized();
   const url = new URL(request.url);
-  const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 60), 1), 200);
+  const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 60), 1), 1000);
   const cursor = url.searchParams.get('cursor') || undefined;
-  const result = await env.IMAGES.list({ prefix: 'images/', limit, cursor, include: ['customMetadata', 'httpMetadata'] });
+  const result = await env.IMAGES.list({
+    prefix: 'images/',
+    limit,
+    cursor,
+    include: ['customMetadata', 'httpMetadata'],
+  });
 
   return json({
     ok: true,
@@ -109,13 +196,13 @@ async function listImages(request, env) {
     truncated: result.truncated,
     files: result.objects
       .sort((a, b) => new Date(b.uploaded || 0) - new Date(a.uploaded || 0))
-      .map((o) => ({
-        key: o.key,
-        size: o.size,
-        uploaded: o.uploaded,
-        type: o.httpMetadata?.contentType || '',
-        originalName: o.customMetadata?.originalName || '',
-        url: imageUrl(request, o.key),
+      .map((object) => ({
+        key: object.key,
+        size: object.size,
+        uploaded: object.uploaded,
+        type: object.httpMetadata?.contentType || '',
+        originalName: object.customMetadata?.originalName || '',
+        url: imageUrl(request, object.key),
       })),
   });
 }
@@ -149,6 +236,7 @@ export default {
     try {
       if (path === '/health') return json({ ok: true, service: 'pixpro-r2' });
       if (path === '/api/upload' && request.method === 'POST') return upload(request, env);
+      if (path === '/api/upload-url' && request.method === 'POST') return uploadFromUrl(request, env);
       if (path === '/api/images' && request.method === 'GET') return listImages(request, env);
       if (path === '/api/images' && request.method === 'DELETE') return removeImage(request, env);
       if (path.startsWith('/i/') && request.method === 'GET') return serveImage(request, env, path);
