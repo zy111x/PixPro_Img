@@ -50,9 +50,12 @@ function makeKey(fileLike = {}) {
   return `images/${yyyy}/${mm}/${dd}/${id}.${safeName(ext).toLowerCase()}`;
 }
 
-function imageUrl(request, key) {
-  const url = new URL(request.url);
-  return `${url.origin}/i/${key.replace(/^images\//, '')}`;
+function publicBaseUrl(request, env) {
+  return String(env.PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/, '');
+}
+
+function imageUrl(request, env, key) {
+  return `${publicBaseUrl(request, env)}/i/${key.replace(/^images\//, '')}`;
 }
 
 function allowedImageTypes() {
@@ -82,7 +85,7 @@ async function storeImage(request, env, { body, name, size, type }) {
     name: name || key.split('/').pop(),
     size: Number(size || 0),
     type,
-    url: imageUrl(request, key),
+    url: imageUrl(request, env, key),
   };
 }
 
@@ -202,7 +205,7 @@ async function listImages(request, env) {
         uploaded: object.uploaded,
         type: object.httpMetadata?.contentType || '',
         originalName: object.customMetadata?.originalName || '',
-        url: imageUrl(request, object.key),
+        url: imageUrl(request, env, object.key),
       })),
   });
 }
@@ -230,6 +233,11 @@ async function serveImage(request, env, pathname) {
 
 async function serveUpstreamStaticAlias(request, env) {
   const url = new URL(request.url);
+
+  if (url.pathname === '/static/images/bg.webp' && env.BACKGROUND_URL) {
+    return Response.redirect(env.BACKGROUND_URL, 302);
+  }
+
   url.pathname = url.pathname.replace(/^\/static/, '') || '/';
   return env.ASSETS.fetch(new Request(url.toString(), request));
 }
